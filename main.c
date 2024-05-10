@@ -30,7 +30,7 @@ SDL_Texture* gTexture = NULL;
 int pause = 0;
 int screen_init()
 {
-     if(SDL_Init(SDL_INIT_VIDEO)<0)
+     if(SDL_Init(SDL_INIT_EVERYTHING)!=0)
     {
         printf("Error");
         return -1;
@@ -46,12 +46,17 @@ int screen_init()
     }
     else
     {
-        gRender = SDL_CreateRenderer(gWindow,-1,0);
+        gRender = SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED |SDL_RENDERER_PRESENTVSYNC);
         if (gRender == NULL)
     {
         printf("Error");
         return -1;
     }
+        
+        //SDL_RenderSetLogicalSize(gRender, 64, 32);
+        SDL_SetRenderDrawColor(gRender,0,0,0,0);
+        SDL_RenderClear(gRender);
+        //SDL_RenderPresent(gRender);
         gTexture = SDL_CreateTexture(gRender, SDL_PIXELFORMAT_RGBA8888, 
             SDL_TEXTUREACCESS_STREAMING,RENDER_W,RENDER_H);
         if (gTexture == NULL)
@@ -59,9 +64,6 @@ int screen_init()
              printf("Error");
              return -1;
         }
-        SDL_SetRenderDrawColor(gRender,0,0,0,0);
-        SDL_RenderClear(gRender);
-        SDL_RenderPresent(gRender);
     
 
     }
@@ -90,8 +92,16 @@ void terminate()
 }
 void draw(cpu *cur_cpu)
 {
-    //int buffer[RENDER_W*RENDER_H];
-    SDL_UpdateTexture(gTexture, NULL, cur_cpu->screen, RENDER_W*sizeof(unsigned char));
+    int buffer[RENDER_W*RENDER_H] = {0};
+    for(int px=0;px<RENDER_W*RENDER_H;px++)
+    {
+        if(cur_cpu->screen[px]==1)
+        {
+           buffer[px]=UINT32_MAX;
+        }
+    }
+   
+    SDL_UpdateTexture(gTexture, NULL, buffer, RENDER_W*sizeof(int));
     SDL_RenderClear(gRender);
     SDL_RenderCopy(gRender, gTexture, NULL, NULL);
     SDL_RenderPresent(gRender);
@@ -114,17 +124,20 @@ int main(int argv, char **argc)
     }
     SDL_Event e;
     int quit = 0;
+    int cycle = 0;
     while(quit==0)
     {   if (pause == 0)
         {
         readOpcode(cur_cpu);
+        cycle++;
         }
-        
-        if(cur_cpu->d_flag == 1)
+        if(cur_cpu->d_flag==1)
         {
             draw(cur_cpu);
-            cur_cpu->d_flag =0;
+            cur_cpu->d_flag=0;
         }
+        SDL_RenderPresent(gRender);
+       
         while(SDL_PollEvent(&e))
         {
           switch(e.type)
@@ -135,57 +148,58 @@ int main(int argv, char **argc)
             case SDL_KEYDOWN:
                 switch(e.key.keysym.sym)
                 {
-                    case  SDLK_KP_1:
-                        cur_cpu->key[0] =1;
+                    case  SDLK_1:
+                        cur_cpu->key[0x1] =1;
                     break;
-                    case  SDLK_KP_2:
-                        cur_cpu->key[1] =1;
+                    case  SDLK_2:
+                        cur_cpu->key[0x2] =1;
                     break;
-                    case  SDLK_KP_3:
-                        cur_cpu->key[2] =1;
+                    case  SDLK_3:
+                        cur_cpu->key[0x3] =1;
                     break;
-                    case  SDLK_KP_4:
-                        cur_cpu->key[3] =1;
+                    case  SDLK_4:
+                        cur_cpu->key[0xc] =1;
                     break;
                     case  SDLK_q:
-                        cur_cpu->key[4] =1;
+                        cur_cpu->key[0x4] =1;
                     break;
                     case  SDLK_w:
-                        cur_cpu->key[5] =1;
+                        cur_cpu->key[0x5] =1;
                     break;
                     case  SDLK_e:
-                        cur_cpu->key[6] =1;
+                        cur_cpu->key[0x6] =1;
                     break;
                     case  SDLK_r:
-                        cur_cpu->key[7] =1;
+                        cur_cpu->key[0xD] =1;
                     case  SDLK_a:
-                        cur_cpu->key[8] =1;
+                        cur_cpu->key[0x7] =1;
                     break;
                     case  SDLK_s:
-                        cur_cpu->key[9] =1;
+                        cur_cpu->key[0x8] =1;
                     break;
                     case  SDLK_d:
-                        cur_cpu->key[10] =1;
+                        cur_cpu->key[0x9] =1;
                     break;
                     case  SDLK_f:
-                        cur_cpu->key[11] =1;
+                        cur_cpu->key[0xE] =1;
                     case  SDLK_z:
-                        cur_cpu->key[12] =1;
+                        cur_cpu->key[0xA] =1;
                     break;
                     case  SDLK_x:
-                        cur_cpu->key[13] =1;
+                        cur_cpu->key[0x0] =1;
                     break;
                     case  SDLK_c:
-                        cur_cpu->key[14] =1;
+                        cur_cpu->key[0xB] =1;
                     break;
                     case  SDLK_v:
-                        cur_cpu->key[15] =1;
+                        cur_cpu->key[0xF] =1;
                     break;
                     case  SDLK_k:
                        for(int i=0;i<RENDER_W*RENDER_H;i++)
                         {
                             printf("%d", cur_cpu->screen[i]);
                         }   
+                        printf("\n");
                     break;
                     case  SDLK_l:
                        for(int i=0;i<4096;i++)
@@ -204,57 +218,58 @@ int main(int argv, char **argc)
             case SDL_KEYUP:
                 switch(e.key.keysym.sym)
                 {
-                    case  SDLK_KP_1:
-                        cur_cpu->key[0] =0;
+                   case  SDLK_1:
+                        cur_cpu->key[0x1] =0;
                     break;
-                    case  SDLK_KP_2:
-                        cur_cpu->key[1] =0;
+                    case  SDLK_2:
+                        cur_cpu->key[0x2] =0;
                     break;
-                    case  SDLK_KP_3:
-                        cur_cpu->key[2] =0;
+                    case  SDLK_3:
+                        cur_cpu->key[0x3] =0;
                     break;
-                    case  SDLK_KP_4:
-                        cur_cpu->key[3] =0;
+                    case  SDLK_4:
+                        cur_cpu->key[0xc] =0;
                     break;
                     case  SDLK_q:
-                        cur_cpu->key[4] =0;
+                        cur_cpu->key[0x4] =0;
                     break;
                     case  SDLK_w:
-                        cur_cpu->key[5] =0;
+                        cur_cpu->key[0x5] =0;
                     break;
                     case  SDLK_e:
-                        cur_cpu->key[6] =0;
+                        cur_cpu->key[0x6] =0;
                     break;
                     case  SDLK_r:
-                        cur_cpu->key[7] =0;
+                        cur_cpu->key[0xD] =0;
                     case  SDLK_a:
-                        cur_cpu->key[8] =0;
+                        cur_cpu->key[0x7] =0;
                     break;
                     case  SDLK_s:
-                        cur_cpu->key[9] =0;
+                        cur_cpu->key[0x8] =0;
                     break;
                     case  SDLK_d:
-                        cur_cpu->key[10] =0;
+                        cur_cpu->key[0x9] =0;
                     break;
                     case  SDLK_f:
-                        cur_cpu->key[11] =0;
+                        cur_cpu->key[0xE] =0;
                     case  SDLK_z:
-                        cur_cpu->key[12] =0;
+                        cur_cpu->key[0xA] =0;
                     break;
                     case  SDLK_x:
-                        cur_cpu->key[13] =0;
+                        cur_cpu->key[0x0] =0;
                     break;
                     case  SDLK_c:
-                        cur_cpu->key[14] =0;
+                        cur_cpu->key[0xB] =0;
                     break;
                     case  SDLK_v:
-                        cur_cpu->key[15] =0;
+                        cur_cpu->key[0xF] =0;
                     break;
                 }
             break;
           }
         }
     }
-    terminate();
     free(cur_cpu);
+    terminate();
+    
 }

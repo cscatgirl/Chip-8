@@ -57,6 +57,7 @@ void readOpcode(cpu *cur_cpu)
                 case 0x000E:
                     cur_cpu->SP--;
                     cur_cpu->PC = cur_cpu->stack[cur_cpu->SP];
+                    cur_cpu->PC+=2;
                 break;
             }
         break;
@@ -66,7 +67,7 @@ void readOpcode(cpu *cur_cpu)
         break;
         case 0x2000:
             cur_cpu->stack[cur_cpu->SP] = cur_cpu->PC;
-            ++cur_cpu->SP;
+            cur_cpu->SP++;
             cur_cpu->PC = opcode & 0x0FFF;
         break;
 
@@ -98,7 +99,7 @@ void readOpcode(cpu *cur_cpu)
           case 0x5000:
             reg_no = (opcode & 0x0F00) >> 8;
             reg_no_2 = (opcode & 0x00F0) >> 4;
-           if (cur_cpu->registers[reg_no] != cur_cpu->registers[reg_no_2])
+           if (cur_cpu->registers[reg_no] == cur_cpu->registers[reg_no_2])
            {
                 cur_cpu->PC +=4;
            }
@@ -126,7 +127,7 @@ void readOpcode(cpu *cur_cpu)
                 case 0x0000:
                     reg_no = (opcode & 0x0F00) >> 8;
                     reg_no_2 = (opcode & 0x00F0) >> 4;
-                    cur_cpu->registers[reg_no] = reg_no_2;
+                    cur_cpu->registers[reg_no] = cur_cpu->registers[reg_no_2];
                     cur_cpu->PC += 2;
                 break;
                 case 0x0001:
@@ -150,7 +151,9 @@ void readOpcode(cpu *cur_cpu)
                 case 0x0004:
                     reg_no = (opcode & 0x0F00) >> 8;
                     reg_no_2 = (opcode & 0x00F0) >> 4;
-                    if(cur_cpu->registers[reg_no] > (0xFF - cur_cpu->registers[reg_no_2]))
+                    int test = (int)(cur_cpu->registers[reg_no] +cur_cpu->registers[reg_no_2]);
+                    cur_cpu->registers[reg_no] += cur_cpu->registers[reg_no_2];
+                    if(test>255)
                     {
                         cur_cpu->registers[0xF] =1;
                     }
@@ -158,31 +161,33 @@ void readOpcode(cpu *cur_cpu)
                     {
                         cur_cpu->registers[0xF] =0;
                     }
-                    cur_cpu->registers[reg_no] += cur_cpu->registers[reg_no_2];
                     cur_cpu->PC += 2;
                 break;
                 case 0x0005:
                     reg_no = (opcode & 0x0F00) >> 8;
                     reg_no_2 = (opcode & 0x00F0) >> 4;
-                    if (cur_cpu->registers[reg_no] > cur_cpu->registers[reg_no_2])
+                    int  carry = (int)cur_cpu->registers[reg_no] -cur_cpu->registers[reg_no_2];
+                    cur_cpu->registers[reg_no] -= cur_cpu->registers[reg_no_2];
+                      if (carry<0)
                     {
-                         cur_cpu->registers[0xF] =1;
+                         cur_cpu->registers[0xF] =0;
                     }
                     else{
-                        cur_cpu->registers[0xF] =0;;
+                        cur_cpu->registers[0xF] =1;
                     }
-                     cur_cpu->registers[reg_no] -= cur_cpu->registers[reg_no_2];
                     cur_cpu->PC +=2;
                 break;
                 case 0x0006:
                     reg_no = (opcode & 0x0F00) >> 8;
-                    cur_cpu->registers[0xF] = 0x0F &  cur_cpu->registers[reg_no];
+                    val =  cur_cpu->registers[reg_no];
                     cur_cpu->registers[reg_no] >>= 1;
+                     cur_cpu->registers[0xF] = val&1;
                     cur_cpu->PC +=2;
                 break;
                 case 0x0007:
-                reg_no = (opcode & 0x0F00) >> 8;
+                    reg_no = (opcode & 0x0F00) >> 8;
                     reg_no_2 = (opcode & 0x00F0) >> 4;
+                    cur_cpu->registers[reg_no] = (cur_cpu->registers[reg_no_2] - cur_cpu->registers[reg_no]);
                     if (cur_cpu->registers[reg_no_2] > cur_cpu->registers[reg_no])
                     {
                          cur_cpu->registers[0xF] =1;
@@ -190,12 +195,13 @@ void readOpcode(cpu *cur_cpu)
                     else{
                         cur_cpu->registers[0xF] =0;;
                     }
-                    cur_cpu->registers[reg_no] = (cur_cpu->registers[reg_no_2] - cur_cpu->registers[reg_no]);
                     cur_cpu->PC +=2;
+                break;
                 case 0x000E:
                     reg_no = (opcode & 0x0F00) >> 8;
-                    cur_cpu->registers[0xF] = cur_cpu->registers[reg_no] >> 7;
+                    val =  cur_cpu->registers[reg_no];
                     cur_cpu->registers[reg_no] <<= 1;
+                    cur_cpu->registers[0xF] = val >> 7;
                     cur_cpu->PC +=2;
                 break;
 
@@ -223,7 +229,7 @@ void readOpcode(cpu *cur_cpu)
         break;
         case 0xD000:
             reg_no = (opcode & 0x0F00) >> 8;
-            reg_no_2 = (opcode & 0x0F00) >> 4;
+            reg_no_2 = (opcode & 0x00F0) >> 4;
             unsigned short pixel;
             unsigned short x =  cur_cpu->registers[reg_no];
             unsigned short y =  cur_cpu->registers[reg_no_2];
