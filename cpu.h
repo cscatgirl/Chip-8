@@ -11,6 +11,9 @@ typedef struct cpu {
     unsigned char key[16];
     unsigned char d_flag; 
  } cpu;
+#define RENDER_W 64
+#define RENDER_H 32
+#define SCALE 8
 void init(cpu *cur_cpu, unsigned char font[]);
 void readOpcode(cpu *cur_cpu);
 int read_rom(cpu *cur_cpu, const char *rom);
