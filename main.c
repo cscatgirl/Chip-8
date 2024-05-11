@@ -137,6 +137,7 @@ int main(int argv, char **argc)
                 state_of_cpu(cur_cpu);
                 terminate();
                 free(cur_cpu);
+                exit(1);
             }
         cycle++;
         }
