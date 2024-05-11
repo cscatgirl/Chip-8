@@ -55,7 +55,7 @@ void readOpcode(cpu *cur_cpu)
                 break;
 
                 case 0x000E:
-                    cur_cpu->SP--;
+                    --cur_cpu->SP;
                     cur_cpu->PC = cur_cpu->stack[cur_cpu->SP];
                     cur_cpu->PC+=2;
                 break;
@@ -67,7 +67,7 @@ void readOpcode(cpu *cur_cpu)
         break;
         case 0x2000:
             cur_cpu->stack[cur_cpu->SP] = cur_cpu->PC;
-            cur_cpu->SP++;
+            ++cur_cpu->SP;
             cur_cpu->PC = opcode & 0x0FFF;
         break;
 
@@ -223,6 +223,10 @@ void readOpcode(cpu *cur_cpu)
             cur_cpu->PC +=2;
         break;
         case 0xB000:
+            val = opcode & 0x0FFF;
+            cur_cpu->PC = val+cur_cpu->registers[0];
+        break;
+        case 0xC000:
             reg_no = (opcode & 0x0F00) >> 8;
             cur_cpu->registers[reg_no] = (rand()%0xFF) & (opcode & 0x00FF);
             cur_cpu->PC +=2;
@@ -231,8 +235,8 @@ void readOpcode(cpu *cur_cpu)
             reg_no = (opcode & 0x0F00) >> 8;
             reg_no_2 = (opcode & 0x00F0) >> 4;
             unsigned short pixel;
-            unsigned short x =  cur_cpu->registers[reg_no];
-            unsigned short y =  cur_cpu->registers[reg_no_2];
+            unsigned short x =  cur_cpu->registers[reg_no]%64;
+            unsigned short y =  cur_cpu->registers[reg_no_2]%32;
             unsigned short n =  (opcode & 0x000F);
             cur_cpu->registers[0xF] = 0;
             for (int yline = 0; yline < n; yline++)
@@ -240,6 +244,10 @@ void readOpcode(cpu *cur_cpu)
                 pixel = cur_cpu->ram[cur_cpu->i_register+yline];
                 for(int xline = 0; xline<8;xline++)
                 {
+                    if (x + xline > 64)
+                    {
+                        break;
+                    }
                     if((pixel &(0x080 >> xline)) !=0)
                     {
                         if(cur_cpu->screen[(x + xline + ((y+yline)*RENDER_W))] ==1)
@@ -249,6 +257,10 @@ void readOpcode(cpu *cur_cpu)
                         cur_cpu->screen[(x + xline + ((y+yline)*RENDER_W))] ^=1;
                     }
                 }
+                if (y + yline >32)
+                    {
+                        break;
+                    }
             }
             cur_cpu->d_flag = 1;
             cur_cpu->PC +=2;

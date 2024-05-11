@@ -38,7 +38,7 @@ int screen_init()
     else
     {
     gWindow = SDL_CreateWindow("Test", SDL_WINDOWPOS_UNDEFINED, 
-        SDL_WINDOWPOS_UNDEFINED, (RENDER_W*SCALE), (RENDER_H*SCALE), SDL_WINDOW_SHOWN|SDL_WINDOW_OPENGL);
+        SDL_WINDOWPOS_UNDEFINED, (RENDER_W*SCALE), (RENDER_H*SCALE), SDL_WINDOW_SHOWN);
     if (gWindow == NULL)
     {
         printf("Error");
@@ -46,19 +46,19 @@ int screen_init()
     }
     else
     {
-        gRender = SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED |SDL_RENDERER_PRESENTVSYNC);
+        gRender = SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED);
         if (gRender == NULL)
     {
         printf("Error");
         return -1;
     }
         
-        //SDL_RenderSetLogicalSize(gRender, 64, 32);
+        SDL_RenderSetLogicalSize(gRender, 64, 32);
         SDL_SetRenderDrawColor(gRender,0,0,0,0);
         SDL_RenderClear(gRender);
-        //SDL_RenderPresent(gRender);
+        SDL_RenderPresent(gRender);
         gTexture = SDL_CreateTexture(gRender, SDL_PIXELFORMAT_RGBA8888, 
-            SDL_TEXTUREACCESS_STREAMING,RENDER_W,RENDER_H);
+            SDL_TEXTUREACCESS_STATIC,RENDER_W,RENDER_H);
         if (gTexture == NULL)
         {
              printf("Error");
@@ -125,8 +125,12 @@ int main(int argv, char **argc)
     SDL_Event e;
     int quit = 0;
     int cycle = 0;
+    int tick;
+    int speed;
     while(quit==0)
-    {   if (pause == 0)
+    {   
+        tick = SDL_GetTicks();
+        if (pause == 0)
         {
         readOpcode(cur_cpu);
         cycle++;
@@ -136,8 +140,13 @@ int main(int argv, char **argc)
             draw(cur_cpu);
             cur_cpu->d_flag=0;
         }
+        speed = SDL_GetTicks() -tick;
         SDL_RenderPresent(gRender);
-       
+        if(speed<1000/500)
+        {
+            SDL_Delay(1000/500);
+        }
+        
         while(SDL_PollEvent(&e))
         {
           switch(e.type)
