@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include<SDL2/SDL.h>
+#include<SDL.h>
 #include "cpu.h"
 unsigned char chip8_fontset[80] =
 { 
@@ -132,7 +132,12 @@ int main(int argv, char **argc)
         tick = SDL_GetTicks();
         if (pause == 0)
         {
-        readOpcode(cur_cpu);
+            if (readOpcode(cur_cpu) == -1)
+            {
+                state_of_cpu(cur_cpu);
+                terminate();
+                free(cur_cpu);
+            }
         cycle++;
         }
         if(cur_cpu->d_flag==1)
@@ -211,10 +216,7 @@ int main(int argv, char **argc)
                         printf("\n");
                     break;
                     case  SDLK_l:
-                       for(int i=0;i<4096;i++)
-                        {
-                            printf("%d", cur_cpu->ram[i]);
-                        }   
+                        state_of_cpu(cur_cpu);
                     break;
                     case  SDLK_p:
                         pause = 1;
@@ -280,5 +282,6 @@ int main(int argv, char **argc)
     }
     free(cur_cpu);
     terminate();
+    return 0;
     
 }

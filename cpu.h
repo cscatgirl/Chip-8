@@ -15,5 +15,6 @@ typedef struct cpu {
 #define RENDER_H 32
 #define SCALE 8
 void init(cpu *cur_cpu, unsigned char font[]);
-void readOpcode(cpu *cur_cpu);
+int readOpcode(cpu *cur_cpu);
 int read_rom(cpu *cur_cpu, const char *rom);
+void state_of_cpu(cpu* cur_cpu);
